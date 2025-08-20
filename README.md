@@ -78,3 +78,5 @@ Capacitar o aluno a desenvolver aplicações Android modernas com **Kotlin** e *
 ---
 
 ## 📁 Estrutura do Repositório
+
+📦 CursoAndroid60h/ ┣ 📂 modulo1_compose/ ┣ 📂 modulo2_room_mvvm/ ┣ 📂 modulo3_api_retrofit/ ┣ 📂 modulo4_firebase/ ┣ 📂 modulo5_publicacao/ ┗ 📄 README.md
