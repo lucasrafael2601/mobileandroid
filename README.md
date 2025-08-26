@@ -1,4 +1,4 @@
-# 📱 Curso de Desenvolvimento Mobile com Android (60h)
+# 📱 Curso de Desenvolvimento Mobile com Android
 
 Este repositório contém os materiais, projetos e recursos utilizados no curso intensivo de **Desenvolvimento Mobile com Android**, com foco em tecnologias modernas como **Kotlin**, **Jetpack Compose**, **Firebase** e **consumo de APIs REST**. O curso é voltado para quem deseja criar aplicativos Android profissionais e atualizados com as demandas do mercado.
 
