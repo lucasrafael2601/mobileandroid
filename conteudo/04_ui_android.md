@@ -224,13 +224,10 @@ Título no topo centro, imagem abaixo, dois botões lado a lado embaixo. Testar 
 2. Lista com Clique  
 RecyclerView de produtos (nome + preço). Ao clicar: Toast mostrando preço formatado.
 
-3. Estilos de Botão  
-Criar estilo Primário (fundo sólido + texto branco) e Secundário (borda + texto colorido). Usar shape + selector para estado pressionado.
-
-4. Formulário Simples  
+3. Formulário Simples  
 Campos: nome, email, idade + botão Enviar. Validar: nome não vazio, email formato básico, idade >= 18. Mostrar mensagens de erro abaixo dos campos.
 
-5. Acessibilidade  
+4. Acessibilidade  
 Pegar um layout e: adicionar contentDescription em imagens, garantir contraste, aumentar área de toque de ícone pequeno (padding + fundo). Colocar comentários explicando.
 
 (Entregar cada exercício com XML principal, código Kotlin essencial e breve explicação.)
