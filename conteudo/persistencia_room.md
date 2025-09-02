@@ -28,19 +28,38 @@ O Room é uma biblioteca de persistência de dados do Android que fornece uma ca
 
 No `build.gradle` (Module):
 
+```toml
+# No arquivo gradle/libs.versions.toml, adicione:
+[versions]
+room = "2.6.1"
+
+[libraries]
+room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
+room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+```
+
 ```gradle
-implementation "androidx.room:room-runtime:2.6.1"
-annotationProcessor "androidx.room:room-compiler:2.6.1"
-// Para Kotlin use kapt ao invés de annotationProcessor
+// No build.gradle (Module), use:
+implementation(libs.room.runtime)
+kapt(libs.room.compiler)
 ```
 
 ---
 
 ## 3. Exemplo Básico
-
 ### 3.1. Criando uma Entity
 
+A camada **Entity** representa uma tabela no banco de dados. Cada campo da classe corresponde a uma coluna da tabela. É nela que você define os dados que serão armazenados.
+
+**Sugestão de caminho:**  
+Crie um arquivo chamado `User.java` na pasta `model` do seu projeto.
+
 ```java
+// model/User.java
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
+import androidx.room.ColumnInfo;
+
 @Entity
 public class User {
     @PrimaryKey(autoGenerate = true)
@@ -51,15 +70,28 @@ public class User {
 
     @ColumnInfo(name = "last_name")
     public String lastName;
+
+    // Construtor de exemplo
+    public User(String firstName, String lastName) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+    }
 }
 ```
 
+> **Dica:** Sempre utilize nomes claros para os campos e anotações para personalizar nomes de colunas, se necessário.
+
+---
+
 ### 3.2. Criando um DAO
 
+O DAO (Data Access Object) define os métodos para acessar o banco de dados.
+
+```java
 ```java
 @Dao
 public interface UserDao {
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insert(User user);
 
     @Query("SELECT * FROM user")
@@ -67,10 +99,18 @@ public interface UserDao {
 
     @Delete
     void delete(User user);
+
+    @Update
+    void update(User user);
 }
 ```
+```
+
+---
 
 ### 3.3. Criando o Database
+
+A classe Database conecta as entidades e os DAOs.
 
 ```java
 @Database(entities = {User.class}, version = 1)
@@ -79,16 +119,30 @@ public abstract class AppDatabase extends RoomDatabase {
 }
 ```
 
-### 3.4. Usando o Room no Código
+---
+
+### 3.4. Exemplo prático: Usando tudo junto
+
+Veja como utilizar as classes criadas para inserir e consultar usuários no banco de dados:
 
 ```java
+// Inicialize o banco de dados
 AppDatabase db = Room.databaseBuilder(getApplicationContext(),
         AppDatabase.class, "database-name").build();
 
+// Obtenha o DAO
 UserDao userDao = db.userDao();
-userDao.insert(new User("Maria", "Silva"));
+
+// Insira um novo usuário
+User user = new User("Maria", "Silva");
+userDao.insert(user);
+
+// Consulte todos os usuários
 List<User> users = userDao.getAll();
 ```
+
+> **Nota:** Operações de banco devem ser feitas em background (Thread/AsyncTask/Coroutines).
+
 
 > **Nota:** Operações de banco devem ser feitas em background (Thread/AsyncTask/Coroutines).
 
