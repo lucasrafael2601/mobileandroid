@@ -1,35 +1,29 @@
-# Aula Completa: Persistência de Dados no Android com Room (Versão Detalhada e Comentada)
+# Aula Completa: Persistência de Dados no Android com Room em Kotlin
 
 ## Introdução
 
-O Room é uma camada de abstração sobre o SQLite que:
-- Reduz código repetitivo (boilerplate).
-- Fornece verificação de consultas em tempo de compilação.
-- Integra-se nativamente com LiveData / Flow / Rx (observabilidade).
-- Ajuda a manter um código organizado e seguro.
+Room abstrai o SQLite e:
+- Reduz boilerplate.
+- Verifica SQL em compile-time.
+- Integra-se com coroutines, Flow, LiveData.
+- Facilita migrations e organização em camadas.
 
 ---
 
 ## 1. Conceitos Básicos
 
-### O que é o Room?
-- Parte do Android Jetpack.
-- Gera implementações de DAOs automaticamente.
-- Valida SQL em compile-time (evita muitos erros em runtime).
-- Oferece suporte a migrations e conversores de tipos.
+Componentes:
+- Entity: tabela.
+- DAO: consultas e operações.
+- Database: ponto central que expõe DAOs.
 
-### Componentes Principais
-- Entity: Classe que mapeia uma tabela.
-- DAO (Data Access Object): Interface com métodos (consultas, inserts etc.).
-- Database: Classe abstrata que expõe os DAOs e configura o Room.
-
-Fluxo básico: Entity -> DAO -> Database -> Uso na camada de dados / ViewModel.
+Fluxo: Entity -> DAO -> Database -> Repository -> ViewModel -> UI (Flow / LiveData).
 
 ---
 
 ## 2. Configuração Inicial
 
-### Adicionando Dependências (Versões Centralizadas)
+### Dependências (Versões Centralizadas)
 
 Arquivo: gradle/libs.versions.toml
 ```toml
@@ -37,26 +31,32 @@ Arquivo: gradle/libs.versions.toml
 room = "2.6.1"
 
 [libraries]
-room-runtime   = { module = "androidx.room:room-runtime", version.ref = "room" }
-room-compiler  = { module = "androidx.room:room-compiler", version.ref = "room" }
-room-ktx       = { module = "androidx.room:room-ktx", version.ref = "room" }
+room-runtime  = { module = "androidx.room:room-runtime", version.ref = "room" }
+room-ktx      = { module = "androidx.room:room-ktx", version.ref = "room" }
+room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 ```
 
-build.gradle (Module):
-```gradle
-// Biblioteca principal em tempo de execução
-implementation(libs.room.runtime)
+build.gradle (module Kotlin + KSP):
+```kotlin
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("com.google.devtools.ksp")
+}
 
-// Extensões (coroutines, etc.)
-implementation(libs.room.ktx)
+dependencies {
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
 
-// Processador de anotações (Java/KAPT)
-kapt(libs.room.compiler)
+    // Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+}
 ```
 
 Observações:
-- Se usar Kotlin + KSP: substituir kapt por ksp(libs.room.compiler).
-- Certifique-se de ter o plugin kapt ou ksp configurado.
+- Use ksp em vez de kapt para melhor performance.
+- Ative Java 17 ou 11 conforme projeto.
 
 ---
 
@@ -64,212 +64,166 @@ Observações:
 
 ### 3.1. Criando uma Entity
 
-Objetivo: criar a tabela user com colunas id, first_name e last_name.
+Arquivo: model/User.kt
+```kotlin
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 
-Arquivo: model/User.java
-```java
-// Importações necessárias das anotações do Room
-import androidx.room.Entity;
-import androidx.room.PrimaryKey;
-import androidx.room.ColumnInfo;
-
-// @Entity indica que esta classe representa uma tabela no banco.
-// Se quiser nome customizado: @Entity(tableName = "user")
-@Entity
-public class User {
-
-    // @PrimaryKey define a chave primária.
-    // autoGenerate = true faz o Room gerar valores automaticamente (INTEGER PRIMARY KEY AUTOINCREMENT).
+@Entity(tableName = "user")
+data class User(
     @PrimaryKey(autoGenerate = true)
-    public int uid;
+    val uid: Int = 0,
 
-    // @ColumnInfo permite definir o nome real da coluna.
-    // Útil para manter Java naming diferente de SQL naming.
     @ColumnInfo(name = "first_name")
-    public String firstName;
+    val firstName: String,
 
     @ColumnInfo(name = "last_name")
-    public String lastName;
-
-    // Construtor usado ao criar a instância antes de inserir.
-    public User(String firstName, String lastName) {
-        this.firstName = firstName; // Atribui valor ao campo firstName
-        this.lastName  = lastName;  // Atribui valor ao campo lastName
-    }
-
-    // (Opcional) Getters/Setters podem ser adicionados para encapsulamento.
-    // (Opcional) Override de toString() para debug.
-}
+    val lastName: String
+)
 ```
 
 Boas práticas:
-- Manter campos simples (tipos primitivos e tipos suportados).
-- Para tipos complexos, usar TypeConverter.
+- Usar data class.
+- Tipos simples; para tipos customizados usar TypeConverter.
 
 ---
 
-### 3.2. Criando um DAO
+### 3.2. Criando o DAO
 
-DAO expõe operações de banco (CRUD + consultas personalizadas).  
-Arquivo: data/UserDao.java
-```java
-// Importações essenciais
-import androidx.room.Dao;
-import androidx.room.Insert;
-import androidx.room.Query;
-import androidx.room.Delete;
-import androidx.room.Update;
-import androidx.room.OnConflictStrategy;
+Arquivo: data/UserDao.kt
+```kotlin
+import androidx.room.*
+import kotlinx.coroutines.flow.Flow
 
-import java.util.List;
-
-// @Dao marca a interface para geração de implementação pelo Room.
 @Dao
-public interface UserDao {
+interface UserDao {
 
-    // @Insert gera SQL de inserção.
-    // onConflict = REPLACE substitui registro com mesma PK (cuidado com perda de dados).
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void insert(User user);
+    suspend fun insert(user: User): Long
 
-    // @Query permite consultas SQL personalizadas.
-    // "SELECT * FROM user" retorna todas as linhas da tabela user.
-    @Query("SELECT * FROM user")
-    List<User> getAll();
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertAll(vararg users: User): List<Long>
 
-    // Remove o registro correspondente ao objeto passado (usa a PK).
-    @Delete
-    void delete(User user);
-
-    // Atualiza os campos baseados na PK do objeto.
     @Update
-    void update(User user);
+    suspend fun update(user: User)
 
-    // Exemplo adicional: buscar por nome
+    @Delete
+    suspend fun delete(user: User)
+
+    @Query("SELECT * FROM user")
+    suspend fun getAllOnce(): List<User>
+
+    @Query("SELECT * FROM user")
+    fun getAllFlow(): Flow<List<User>>
+
     @Query("SELECT * FROM user WHERE first_name LIKE :name LIMIT 1")
-    User findByFirstName(String name);
+    suspend fun findByFirstName(name: String): User?
 }
 ```
-
-Notas:
-- Para operações pesadas, usar threads (Executors) ou coroutines (em Kotlin).
-- Em Kotlin, prefira marcar métodos com suspend.
 
 ---
 
 ### 3.3. Criando o Database
 
-Conecta entidades e DAOs.  
-Arquivo: data/AppDatabase.java
-```java
-// Imports essenciais
-import androidx.room.Database;
-import androidx.room.RoomDatabase;
+Arquivo: data/AppDatabase.kt
+```kotlin
+import androidx.room.Database
+import androidx.room.RoomDatabase
 
-// @Database lista entidades e controla versão.
-// version é usada para migrations.
-// exportSchema = true (padrão) gera esquema para versionamento (configure pasta schemas).
-@Database(entities = {User.class}, version = 1, exportSchema = true)
-public abstract class AppDatabase extends RoomDatabase {
-
-    // Método abstrato que o Room implementa em tempo de compilação.
-    public abstract UserDao userDao();
+@Database(entities = [User::class], version = 1, exportSchema = true)
+abstract class AppDatabase : RoomDatabase() {
+    abstract fun userDao(): UserDao
 }
 ```
-
-Boas práticas:
-- Criar singleton do banco (evita múltiplas instâncias pesadas).
-- Gerenciar migrações ao alterar a versão.
 
 ---
 
-### 3.4. Inicializando e Usando (Exemplo Prático)
+### 3.4. Inicializando e Usando (Exemplo)
 
-Exemplo mínimo (Java) em, por exemplo, uma Activity (NÃO fazer em main thread na prática):
+Evite criar a instância repetidamente. Use singleton.
 
-```java
-// Imports básicos
-import androidx.room.Room;
-import android.os.Bundle;
-import androidx.appcompat.app.AppCompatActivity;
-import java.util.List;
-import java.util.concurrent.Executors;
+Arquivo: data/DatabaseProvider.kt
+```kotlin
+import android.content.Context
+import androidx.room.Room
 
-public class MainActivity extends AppCompatActivity {
+object DatabaseProvider {
+    @Volatile
+    private var INSTANCE: AppDatabase? = null
 
-    // Referência para o banco
-    private AppDatabase db;
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        // setContentView(R.layout.activity_main); // Layout opcional
-
-        // Cria (ou abre) o banco.
-        // databaseBuilder(context, classe, nome_do_arquivo.db)
-        db = Room.databaseBuilder(
-                getApplicationContext(),
-                AppDatabase.class,
+    fun get(context: Context): AppDatabase =
+        INSTANCE ?: synchronized(this) {
+            INSTANCE ?: Room.databaseBuilder(
+                context.applicationContext,
+                AppDatabase::class.java,
                 "app_database.db"
-        )
-        // .fallbackToDestructiveMigration() // (Evite em produção, apaga dados)
-        .build();
-
-        // Executa operações fora da UI thread
-        Executors.newSingleThreadExecutor().execute(() -> {
-            // Obtém DAO
-            UserDao userDao = db.userDao();
-
-            // Cria usuário
-            User user = new User("Maria", "Silva");
-
-            // Insere
-            userDao.insert(user);
-
-            // Consulta tudo
-            List<User> all = userDao.getAll();
-
-            // Exemplo de log (substituir por uso real na UI via Handler / LiveData)
-            for (User u : all) {
-                System.out.println("User: " + u.firstName + " " + u.lastName);
-            }
-        });
-    }
+            )
+            .build()
+            .also { INSTANCE = it }
+        }
 }
 ```
 
-Observações:
-- Nunca realizar I/O em main thread (causa ANR).
-- Preferir ViewModel + LiveData / Flow para atualizar a UI.
+Uso rápido (ex: em ViewModel via repository):
+```kotlin
+class UserRepository(private val dao: UserDao) {
+    val usersFlow = dao.getAllFlow()
+    suspend fun add(first: String, last: String) = dao.insert(User(firstName = first, lastName = last))
+}
+```
+
+ViewModel:
+```kotlin
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+
+class UserViewModel(repo: UserRepository) : ViewModel() {
+    val users = repo.usersFlow.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    fun addSample() = viewModelScope.launch {
+        repo.add("Maria", "Silva")
+    }
+}
+```
 
 ---
 
 ## 4. Recursos Intermediários
 
-### 4.1. Consultas Personalizadas
-```java
-// Busca um usuário pelo primeiro nome (LIKE permite padrões, ex: "Ma%").
-@Query("SELECT * FROM user WHERE first_name LIKE :name LIMIT 1")
-User findByName(String name);
+### 4.1. Consultas
+```kotlin
+@Query("SELECT * FROM user WHERE first_name LIKE :prefix || '%'")
+fun searchByPrefix(prefix: String): Flow<List<User>>
 ```
 
-### 4.2. Atualização de Dados
-```java
-// Atualiza todas as colunas persistidas, casando pela PK (uid).
+### 4.2. Atualização
+```kotlin
 @Update
-void update(User user);
+suspend fun update(user: User)
 ```
 
-### 4.3. Observando Dados com LiveData
-```java
-// Retorna LiveData que emite a lista a cada mudança na tabela 'user'.
-@Query("SELECT * FROM user")
-LiveData<List<User>> getAllLive();
-```
+### 4.3. Observando com Flow
+- Flow integrado a coroutines.
+- UI coleta com repeatOnLifecycle.
 
-Benefícios:
-- Atualização automática da UI.
-- Integração com ciclo de vida (evita leaks).
+Exemplo na Activity/Fragment:
+```kotlin
+lifecycleScope.launch {
+    repeatOnLifecycle(Lifecycle.State.STARTED) {
+        viewModel.users.collect { list ->
+            // Atualizar UI
+        }
+    }
+}
+```
 
 ---
 
@@ -277,113 +231,98 @@ Benefícios:
 
 ### 5.1. Relacionamentos (One-to-Many)
 
-Arquivo: model/Book.java
-```java
-import androidx.room.Entity;
-import androidx.room.PrimaryKey;
+Arquivo: model/Book.kt
+```kotlin
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 
 @Entity
-public class Book {
-
-    @PrimaryKey(autoGenerate = true)
-    public int bookId;        // Identificador do livro
-
-    public int userOwnerId;   // FK referenciando User.uid (não há constraint automática por padrão)
-
-    public String title;      // Título do livro
-}
+data class Book(
+    @PrimaryKey(autoGenerate = true) val bookId: Int = 0,
+    val userOwnerId: Int,
+    val title: String
+)
 ```
 
 Classe de relação:
-```java
-import androidx.room.Embedded;
-import androidx.room.Relation;
-import java.util.List;
+```kotlin
+import androidx.room.Embedded
+import androidx.room.Relation
 
-public class UserWithBooks {
-
-    // @Embedded insere campos do User no objeto resultante.
-    @Embedded
-    public User user;
-
-    // @Relation vincula user.uid -> Book.userOwnerId
+data class UserWithBooks(
+    @Embedded val user: User,
     @Relation(
         parentColumn = "uid",
         entityColumn = "userOwnerId"
     )
-    public List<Book> books;
-}
+    val books: List<Book>
+)
 ```
 
-DAO com transação:
-```java
-@Dao
-public interface UserWithBooksDao {
+DAO:
+```kotlin
+import androidx.room.Dao
+import androidx.room.Query
+import androidx.room.Transaction
+import kotlinx.coroutines.flow.Flow
 
-    // @Transaction garante consistência ao montar o objeto composto.
+@Dao
+interface UserWithBooksDao {
     @Transaction
     @Query("SELECT * FROM user")
-    List<UserWithBooks> getUsersWithBooks();
+    fun getUsersWithBooksFlow(): Flow<List<UserWithBooks>>
 }
 ```
 
 ### 5.2. Migrations
 
-Quando alterar schema (ex: adicionar coluna), incremente version.
+Adicionar campo exige versão nova.
 
-```java
-import androidx.room.migration.Migration;
-import androidx.sqlite.db.SupportSQLiteDatabase;
-import androidx.annotation.NonNull;
+```kotlin
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
-static final Migration MIGRATION_1_2 = new Migration(1, 2) {
-    @Override
-    public void migrate(@NonNull SupportSQLiteDatabase database) {
-        // Adiciona coluna age (INTEGER) à tabela user sem apagar dados existentes
-        database.execSQL("ALTER TABLE user ADD COLUMN age INTEGER");
-    }
-};
-```
-
-Uso na criação:
-```java
-Room.databaseBuilder(context, AppDatabase.class, "app_database.db")
-    .addMigrations(MIGRATION_1_2)
-    .build();
-```
-
-### 5.3. TypeConverters (Tipos Personalizados)
-
-Arquivo: util/Converters.java
-```java
-import androidx.room.TypeConverter;
-import java.util.Date;
-
-public class Converters {
-
-    // Converte de Long (no banco) para Date (na app)
-    @TypeConverter
-    public static Date fromTimestamp(Long value) {
-        return value == null ? null : new Date(value);
-    }
-
-    // Converte de Date (objeto) para Long (epoch millis) ao salvar
-    @TypeConverter
-    public static Long dateToTimestamp(Date date) {
-        return date == null ? null : date.getTime();
+val MIGRATION_1_2 = object : Migration(1, 2) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE user ADD COLUMN age INTEGER")
     }
 }
 ```
 
-Aplicação no Database:
-```java
-import androidx.room.TypeConverters;
+Aplicar:
+```kotlin
+Room.databaseBuilder(context, AppDatabase::class.java, "app_database.db")
+    .addMigrations(MIGRATION_1_2)
+    .build()
+```
 
-@Database(entities = {User.class, Book.class}, version = 2)
-@TypeConverters({Converters.class})
-public abstract class AppDatabase extends RoomDatabase {
-    public abstract UserDao userDao();
-    public abstract UserWithBooksDao userWithBooksDao();
+### 5.3. TypeConverters
+
+Arquivo: util/Converters.kt
+```kotlin
+import androidx.room.TypeConverter
+import java.util.Date
+
+object Converters {
+    @TypeConverter
+    @JvmStatic
+    fun fromTimestamp(value: Long?): Date? = value?.let { Date(it) }
+
+    @TypeConverter
+    @JvmStatic
+    fun dateToTimestamp(date: Date?): Long? = date?.time
+}
+```
+
+Aplicar no Database (versão 2):
+```kotlin
+import androidx.room.TypeConverters
+
+@Database(entities = [User::class, Book::class], version = 2, exportSchema = true)
+@TypeConverters(Converters::class)
+abstract class AppDatabase : RoomDatabase() {
+    abstract fun userDao(): UserDao
+    abstract fun userWithBooksDao(): UserWithBooksDao
 }
 ```
 
@@ -391,50 +330,59 @@ public abstract class AppDatabase extends RoomDatabase {
 
 ## 6. Boas Práticas
 
-- Sempre usar background thread (Executors, coroutines).
-- Preferir LiveData / Flow para reatividade.
-- Planejar migrations antes de publicar versão em produção.
-- Separar pacotes: model/, data/, util/, db/.
-- Evitar SELECT * em listas muito grandes (paginação: Paging 3).
-- Usar índices (@Index) em colunas muito consultadas.
-- Validar dados antes de inserir (camada de domínio).
+- Usar coroutines + Flow para reatividade.
+- Evitar I/O na main thread.
+- Planejar migrations (sem fallback destrutivo em produção).
+- Paginar listas grandes (Paging 3).
+- Adicionar índices para colunas filtradas.
+- Separar camadas: model, data (dao), db, repository, ui.
 
-Exemplo de índice:
-```java
-@Entity(indices = {@Index(value = {"first_name"})})
-public class User { ... }
+Índice:
+```kotlin
+import androidx.room.Entity
+import androidx.room.Index
+
+@Entity(
+    tableName = "user",
+    indices = [Index(value = ["first_name"])]
+)
+data class User(
+    @PrimaryKey(autoGenerate = true) val uid: Int = 0,
+    @ColumnInfo(name = "first_name") val firstName: String,
+    @ColumnInfo(name = "last_name") val lastName: String
+)
 ```
 
 ---
 
 ## 7. Referências
 
-- Documentação Oficial Room: https://developer.android.com/training/data-storage/room
-- Guia Jetpack: https://developer.android.com/jetpack
+- Room: https://developer.android.com/training/data-storage/room
+- Jetpack: https://developer.android.com/jetpack
 - Migrations: https://developer.android.com/training/data-storage/room/migrating-db
-- TypeConverters: https://developer.android.com/training/data-storage/room/referencing-data
+- Kotlin Coroutines: https://developer.android.com/kotlin/coroutines
 
 ---
 
 ## 8. Exercício Prático
 
-1. Criar app de cadastro de usuários (nome / sobrenome / idade opcional).
-2. Implementar CRUD completo (insert / list / update / delete).
-3. Adicionar livros relacionados ao usuário (One-to-Many).
-4. Exibir lista reativa com LiveData.
-5. Adicionar campo Date de criação usando TypeConverter.
-6. Criar MIGRATION para adicionar nova coluna (ex: email).
-7. Implementar busca por prefixo do first_name.
+1. Implementar CRUD completo com Flow.
+2. Adicionar relação User -> Books.
+3. Exibir lista em RecyclerView observando Flow.
+4. Campo Date com TypeConverter.
+5. Criar MIGRATION adicionando email.
+6. Busca por prefixo.
+7. Paginação com Paging 3 (RemoteMediator opcional).
 
-Desafio extra:
-- Implementar paginação (Paging 3).
-- Medir performance (Trace / Systrace).
-- Adicionar testes instrumentados de DAO.
+Desafio:
+- Testes de DAO com in-memory database.
+- Medir tempo de queries com Trace.
+- Adicionar cache + Repository estruturado.
 
 ---
 
 ## Conclusão
 
-O Room fornece uma interface robusta, segura e escalável para persistência local. Com Entities bem definidas, DAOs claros e boas práticas (migrations, reatividade e separação de camadas), sua aplicação torna-se mais confiável e fácil de manter. Pratique incrementando gradualmente: básico -> consultas -> relações -> migrations -> otimização.
+Com Kotlin, Room integra-se de forma direta a coroutines e Flow, simplificando persistência reativa e segura. Evolua gradualmente: entidades simples, DAOs com suspend, Flow, relações, migrations e otimizações.
 
 Fim.
