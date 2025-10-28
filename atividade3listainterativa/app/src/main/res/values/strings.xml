@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Lista</string>
+    <string name="delete">Deletar tarefa</string>
+    <string name="edit_task">Editar tarefa</string>
+    <string name="edit_task_title">Novo título</string>
+    <string name="save">Salvar</string>
+    <string name="empty_title_msg">O título não pode ficar vazio</string>
+</resources>
