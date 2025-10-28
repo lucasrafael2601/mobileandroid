@@ -1,0 +1,25 @@
+<resources>
+    <!-- MaterialButton “cheio” -->
+    <style name="Widget.MyApp.MaterialButton" parent="Widget.Material3.Button">
+        <item name="cornerRadius">16dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:minHeight">48dp</item>
+    </style>
+
+    <!-- Button padrão (se usar <Button/>) -->
+    <style name="Widget.MyApp.Button" parent="Widget.Material3.Button">
+        <item name="cornerRadius">16dp</item>
+    </style>
+
+    <!-- CheckBox Material -->
+    <style name="Widget.MyApp.CheckBox" parent="Widget.Material3.CompoundButton.CheckBox" />
+
+    <!-- TextInputLayout preenchido com cantos arredondados -->
+    <style name="Widget.MyApp.TextInputLayout" parent="Widget.Material3.TextInputLayout.FilledBox">
+        <item name="boxCornerRadiusTopStart">12dp</item>
+        <item name="boxCornerRadiusTopEnd">12dp</item>
+        <item name="boxCornerRadiusBottomStart">12dp</item>
+        <item name="boxCornerRadiusBottomEnd">12dp</item>
+    </style>
+</resources>

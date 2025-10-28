@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_main"
+    app:startDestination="@id/homeFragment">
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.example.myapplication.HomeFragment"
+        android:label="Home"
+        tools:layout="@layout/fragment_home">
+
+        <action
+            android:id="@+id/action_homeFragment_to_settingsFragment"
+            app:destination="@id/settingsFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_notificationsFragment"
+            app:destination="@id/notificationsFragment" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/habitsFragment"
+        android:name="com.example.myapplication.HabitsFragment"
+        android:label="Hábitos"
+        tools:layout="@layout/fragment_habits">
+        <action
+            android:id="@+id/action_habitsFragment_to_habitDetailFragment"
+            app:destination="@id/habitDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.example.myapplication.ProfileFragment"
+        android:label="Perfil"
+        tools:layout="@layout/fragment_profile" />
+
+    <fragment
+        android:id="@+id/habitDetailFragment"
+        android:name="com.example.myapplication.HabitDetailFragment"
+        android:label="Detalhes do Hábito"
+        tools:layout="@layout/fragment_habit_detail">
+        <argument
+            android:name="habitName"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.example.myapplication.SettingsFragment"
+        android:label="Configurações"
+        tools:layout="@layout/fragment_settings" />
+    <fragment
+        android:id="@+id/notificationsFragment"
+        android:name="com.example.myapplication.NotificationsFragment"
+        android:label="Notificações"
+        tools:layout="@layout/fragment_notifications" />
+
+</navigation>
