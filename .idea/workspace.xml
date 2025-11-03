@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="NONE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="2161dae7-3e63-4d00-94ef-bc617f013906" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/Atividade-2-Arquitetura MVVM.rar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/conteudo/01_intro.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/conteudo/02_kotlin_moderno.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/conteudo/03_activity.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/conteudo/04_ui_android.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/conteudo/05_intents.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/conteudo/06_recursos.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/conteudo/07_fragment.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/conteudo/persistencia_room.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MainActivity.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/dao/UserDao.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/database/UserDatabase.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/model/User.kt" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[DeviceId(pluginId=LocalEmulator, isTemplate=false, identifier=path=C:\Users\Lucas Rafael\.android\avd\Medium_Phone.avd)]" />
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 6
+}]]></component>
+  <component name="ProjectId" id="34fo458tdjPGovLf1HwnwRbtbZN" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "git-widget-placeholder": "atividade2ArquiteturaMVVM",
+    "last_opened_file_path": "C:/Users/Lucas Rafael/Desktop/mobileandroid"
+  }
+}]]></component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="2161dae7-3e63-4d00-94ef-bc617f013906" name="Changes" comment="" />
+      <created>1761613793903</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1761613793903</updated>
+    </task>
+    <servers />
+  </component>
+</project>
